@@ -20,15 +20,12 @@ class Model:
         # TODO
         self.G.clear()
         self._edges = DAO.get_connessioni()
-        fattori = {'facile': 1,
-                   'medio' : 1.5,
-                   'difficile' : 2}
+        fattori = {'facile': 1, 'medio' : 1.5, 'difficile' : 2}
         for edge in self._edges:
-            if edge.anno <= year and edge.id is not None:
-                fattore_difficolta = fattori.get(edge.difficolta)
-                peso = edge.distanza * fattore_difficolta
+            if edge.anno <= year and edge.difficolta in fattori:
+                fattore_difficolta = float(fattori[edge.difficolta])
+                peso = float(edge.distanza) * fattore_difficolta
                 self.G.add_edge(edge.id_rifugio1, edge.id_rifugio2, weight=peso)
-        return self.G
 
     def get_edges_weight_min_max(self):
         """
@@ -37,6 +34,9 @@ class Model:
         :return: il peso massimo degli archi nel grafo
         """
         # TODO
+        weights = list(nx.get_edge_attributes(self.G, 'weight').values())
+        weights = [float(w) for w in weights]
+        return min(weights), max(weights)
 
 
     def count_edges_by_threshold(self, soglia):
@@ -47,6 +47,24 @@ class Model:
         :return maggiori: archi con peso > soglia
         """
         # TODO
+        minori = 0
+        maggiori = 0
+        weights = list(nx.get_edge_attributes(self.G, 'weight').values())
+        weights = [float(w) for w in weights]
+        for w in weights:
+            if soglia > w > min(weights):
+                minori += 1
+            if soglia < w < max(weights):
+                maggiori += 1
+        return minori, maggiori
 
     """Implementare la parte di ricerca del cammino minimo"""
     # TODO
+    def cammino_minimo(self, soglia):
+        miglior_cammino = self._ricorsione(soglia, [], 0)
+
+    def _ricorsione(self, soglia, parziale, minimo_peso):
+        if len(parziale)>=2:
+            miglior_cammino = parziale.copy()
+            minimo_peso = 0
+
