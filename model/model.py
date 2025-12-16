@@ -1,3 +1,5 @@
+import copy
+
 import networkx as nx
 
 from database.dao import DAO
@@ -10,6 +12,10 @@ class Model:
         self.G = nx.Graph()
         self._nodes = None
         self._edges = None
+        self._rifugi = None
+        self._idMap = {}
+        self._soluzioneMigliore = []
+        self._pesoMigliore = 0
 
     def build_weighted_graph(self, year: int):
         """
@@ -19,8 +25,8 @@ class Model:
         """
         # TODO
         self.G.clear()
-        self._edges = DAO.get_connessioni()
-        fattori = {'facile': 1, 'medio' : 1.5, 'difficile' : 2}
+        self._edges = DAO.get_cammini()
+        fattori = {'facile': 1, 'media' : 1.5, 'difficile' : 2}
         for edge in self._edges:
             if edge.anno <= year and edge.difficolta in fattori:
                 fattore_difficolta = float(fattori[edge.difficolta])
@@ -52,19 +58,45 @@ class Model:
         weights = list(nx.get_edge_attributes(self.G, 'weight').values())
         weights = [float(w) for w in weights]
         for w in weights:
-            if soglia > w > min(weights):
+            if soglia > w :
                 minori += 1
-            if soglia < w < max(weights):
+            if soglia < w :
                 maggiori += 1
         return minori, maggiori
 
     """Implementare la parte di ricerca del cammino minimo"""
     # TODO
-    def cammino_minimo(self, soglia):
-        miglior_cammino = self._ricorsione(soglia, [], 0)
+    def cammino_minimo(self, S):
+        self._soluzioneMigliore = []
+        self._pesoMigliore = float("inf")
 
-    def _ricorsione(self, soglia, parziale, minimo_peso):
-        if len(parziale)>=2:
-            miglior_cammino = parziale.copy()
-            minimo_peso = 0
+        for v in self.G.nodes():
+            self._dfs([v], 0, S)
+
+        if self._pesoMigliore == float("inf"):
+            return [], 0
+
+        return self._soluzioneMigliore, self._pesoMigliore
+
+    def _dfs(self, parziale, peso_attuale, S):
+        if len(parziale) >= 3:
+            if peso_attuale < self._pesoMigliore:
+                self._pesoMigliore = peso_attuale
+                self._soluzioneMigliore = parziale.copy()
+                return
+        for v in self.G.neighbors(parziale[-1]):
+            if v not in parziale:
+                peso_arco = self.G[parziale[-1]][v]['weight']
+                if peso_arco > S:
+                    if peso_attuale + peso_arco < self._pesoMigliore:
+                        parziale.append(v)
+                        self._dfs(parziale, peso_attuale + peso_arco, S)
+                        parziale.pop()
+
+    @property
+    def idMap(self):
+        self._rifugi = DAO.get_rifugi()
+        self._idMap = {rif.id: rif for rif in self._rifugi}
+        return self._idMap
+
 

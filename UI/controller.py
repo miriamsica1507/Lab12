@@ -54,7 +54,21 @@ class Controller:
         except:
             self._view.show_alert("Inserisci un numero valido per la soglia.")
             return
-        cammino_minimo = self._model.cammino_minimo(soglia)
+        cammino, peso = self._model.cammino_minimo(soglia)
+
         self._view.lista_visualizzazione_3.controls.clear()
-        self._view.lista_visualizzazione_3.controls.append(ft.Text())
+        self._view.lista_visualizzazione_3.controls.append(ft.Text("Cammino minimo:"))
+
+        if len(cammino) == 0:
+            self._view.lista_visualizzazione_3.controls.append(ft.Text("Nessun cammino valido trovato"))
+        else:
+            i = 0
+            while i <= len(cammino) - 1:
+                u = cammino[i]
+                v = cammino[i + 1]
+                rif1 = self._model.idMap[u]
+                rif2 = self._model.idMap[v]
+                self._view.lista_visualizzazione_3.controls.append(ft.Text(f"{rif1}--> {rif2} peso: {peso:.2f}"))
+                i = i + 1
+        self._view.page.update()
 
